@@ -1,0 +1,9 @@
+.DS_Store
+
+# Git
+.gitignore
+
+# Docker / VS Code
+.devcontainer
+.dockerignore
+.vscode
