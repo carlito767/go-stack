@@ -1,4 +1,4 @@
-package clp
+package clp_test
 
 import (
 	"errors"
@@ -6,6 +6,8 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/carlito767/go-stack/clp"
 )
 
 type DuplicatedOptionName struct {
@@ -111,7 +113,7 @@ func TestParseOptions(t *testing.T) {
 		os.Args = []string{"app", "--surname=Doe", "--name=John"}
 
 		var p Person
-		if err := ParseOptions(&p); err != nil {
+		if err := clp.ParseOptions(&p); err != nil {
 			t.Errorf("unexpected parsing error: %v", err)
 		}
 
@@ -329,7 +331,7 @@ func TestParseOptionsFromArgs(t *testing.T) {
 				got = reflect.New(reflect.TypeOf(tt.want).Elem()).Interface()
 			}
 
-			err := ParseOptionsFromArgs(got, tt.args)
+			err := clp.ParseOptionsFromArgs(got, tt.args)
 
 			if err == nil && !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("got: %v, want: %v", got, tt.want)
@@ -338,7 +340,7 @@ func TestParseOptionsFromArgs(t *testing.T) {
 				t.Errorf("error: %v, wantErr: %v", err, tt.wantErr)
 			}
 			if err != nil && tt.wantErr != nil {
-				var perr *ParsingError
+				var perr *clp.ParsingError
 				if errors.As(err, &perr) {
 					uerr := errors.Unwrap(err)
 					if uerr != nil && uerr.Error() != tt.wantErr.Error() {

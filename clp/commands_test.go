@@ -1,4 +1,4 @@
-package clp
+package clp_test
 
 import (
 	"errors"
@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/carlito767/go-stack/clp"
 )
 
 // Command Add
@@ -17,7 +19,7 @@ type OptionsAdd struct {
 
 func HandleAdd(args []string) error {
 	var o OptionsAdd
-	if err := ParseOptionsFromArgs(&o, args); err != nil {
+	if err := clp.ParseOptionsFromArgs(&o, args); err != nil {
 		return err
 	}
 
@@ -40,7 +42,7 @@ type OptionsHello struct {
 
 func HandleHello(args []string) error {
 	o := OptionsHello{Name: "World"}
-	if err := ParseOptionsFromArgs(&o, args); err != nil {
+	if err := clp.ParseOptionsFromArgs(&o, args); err != nil {
 		return err
 	}
 
@@ -61,19 +63,19 @@ func TestParseCommands(t *testing.T) {
 		defer func(old []string) { os.Args = old }(os.Args)
 		os.Args = []string{"app", "hello", "World"}
 
-		commands := map[string]Handler{"hello": HandleHello}
-		if err := HandleCommands(commands); err != nil {
+		commands := map[string]clp.Handler{"hello": HandleHello}
+		if err := clp.HandleCommands(commands); err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
 	})
 }
 
 func TestHandleCommandsFromArgs(t *testing.T) {
-	commands := map[string]Handler{"add": HandleAdd, "hello": HandleHello}
+	commands := map[string]clp.Handler{"add": HandleAdd, "hello": HandleHello}
 
 	tests := []struct {
 		name     string
-		commands map[string]Handler
+		commands map[string]clp.Handler
 		args     []string
 		wantErr  error
 	}{
@@ -91,7 +93,7 @@ func TestHandleCommandsFromArgs(t *testing.T) {
 		},
 		{
 			name:     "default command",
-			commands: map[string]Handler{"add": HandleAdd, "": HandleHello},
+			commands: map[string]clp.Handler{"add": HandleAdd, "": HandleHello},
 			args:     []string{"--lang=fr", "mon ami"},
 			wantErr:  nil,
 		},
@@ -117,7 +119,7 @@ func TestHandleCommandsFromArgs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := HandleCommandsFromArgs(tt.commands, tt.args)
+			err := clp.HandleCommandsFromArgs(tt.commands, tt.args)
 
 			if (err != nil) != (tt.wantErr != nil) {
 				t.Errorf("error: %v, wantErr: %v", err, tt.wantErr)
