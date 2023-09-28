@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "✅ Test",
+      "type": "shell",
+      "command": "make cover",
+    },
+    {
+      "label": "▶️ Run",
+      "type": "shell",
+      "command": "make run-server",
+    },
+    {
+      "label": "⏹ Stop",
+      "type": "shell",
+      "command": "pkill make",
+    },
+  ]
+}

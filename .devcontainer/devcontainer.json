@@ -9,6 +9,7 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        "actboy168.tasks",
         "golang.go"
       ]
     }
