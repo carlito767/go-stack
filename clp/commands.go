@@ -7,13 +7,13 @@ import (
 
 type Handler func([]string) error
 
-// Parses the command-line arguments from os.Args[1:]
+// HandleCommands parses the command-line arguments from os.Args[1:]
 // and handles the corresponding command.
 func HandleCommands(handlers map[string]Handler) error {
 	return HandleCommandsFromArgs(handlers, os.Args[1:])
 }
 
-// Parses the given arguments
+// HandleCommandsFromArgs parses the given arguments
 // and handles the corresponding command.
 func HandleCommandsFromArgs(handlers map[string]Handler, args []string) error {
 	if _, ok := handlers[""]; ok {

@@ -20,13 +20,13 @@ func (e *ParsingError) Unwrap() error {
 	return e.err
 }
 
-// Parses the command-line arguments from os.Args[1:]
+// ParseOptions parses the command-line arguments from os.Args[1:]
 // and updates the struct fields with the corresponding values.
 func ParseOptions(data interface{}) error {
 	return ParseOptionsFromArgs(data, os.Args[1:])
 }
 
-// Parses the given arguments
+// ParseOptionsFromArgs parses the given arguments
 // and updates the struct fields with the corresponding values.
 func ParseOptionsFromArgs(data interface{}, args []string) error {
 	if err := parse(data, args); err != nil {
