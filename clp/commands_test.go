@@ -58,8 +58,8 @@ func HandleHello(args []string) error {
 	return nil
 }
 
-func TestParseCommands(t *testing.T) {
-	t.Run("parse commands", func(t *testing.T) {
+func TestHandleCommands(t *testing.T) {
+	t.Run("handle commands", func(t *testing.T) {
 		defer func(old []string) { os.Args = old }(os.Args)
 		os.Args = []string{"app", "hello", "World"}
 
