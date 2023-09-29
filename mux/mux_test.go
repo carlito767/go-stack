@@ -8,47 +8,18 @@ import (
 	"github.com/carlito767/go-stack/mux"
 )
 
-// Middlewares
-
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// add logic here
-		w.Write([]byte("logging\n"))
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func middleware1(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// add logic here
-		w.Write([]byte("1"))
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func middleware2(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// add logic here
-		w.Write([]byte("2"))
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func middleware3(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// add logic here
-		w.Write([]byte("3"))
-
-		next.ServeHTTP(w, r)
-	})
+func m(msg string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte(msg))
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 func TestRouter(t *testing.T) {
 	router := mux.NewRouter()
-	router.Use(loggingMiddleware)
+	router.Use(m("1"), m("2"))
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -62,7 +33,7 @@ func TestRouter(t *testing.T) {
 	router.GET("/nil").Then(nil)
 
 	router.GET("/path/:id").
-		Use(middleware1, middleware2, middleware3).
+		Use(m("3"), m("4")).
 		Then(testHandler)
 
 	// test the router with an invalid handler
@@ -82,7 +53,7 @@ func TestRouter(t *testing.T) {
 	}
 
 	// check middlewares
-	expected := "logging\n123"
+	expected := "1234"
 	if w.Body.String() != expected {
 		t.Fatalf("response body expected: %#v, got: %#v", expected, w.Body.String())
 	}
