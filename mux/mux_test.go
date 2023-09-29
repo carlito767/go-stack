@@ -164,8 +164,8 @@ func TestContext(t *testing.T) {
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// verify that current route is correct
 		currentRoute := mux.CurrentRoute(r)
-		expectedRoute := mux.MatchedRoute{Method: "GET", Pattern: "/path/:id"}
-		if currentRoute != expectedRoute {
+		expectedRoute := mux.Route{Method: "GET", Pattern: "/path/:id"}
+		if currentRoute.Method != expectedRoute.Method || currentRoute.Pattern != expectedRoute.Pattern {
 			t.Errorf("route expected: %v, got: %v", expectedRoute, currentRoute)
 		}
 

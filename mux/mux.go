@@ -23,16 +23,12 @@ type Mux struct {
 type Middleware = func(http.Handler) http.Handler
 
 type Route struct {
-	mux         *Mux
-	method      string
-	pattern     string
-	middlewares []Middleware
-	handler     http.Handler
-}
-
-type MatchedRoute struct {
 	Method  string
 	Pattern string
+
+	mux         *Mux
+	middlewares []Middleware
+	handler     http.Handler
 }
 
 type muxContextKey uint
@@ -54,27 +50,27 @@ func (m *Mux) Use(middlewares ...Middleware) *Mux {
 
 // GET sets a route with the GET HTTP method.
 func (m *Mux) GET(p string) *Route {
-	return &Route{mux: m, method: "GET", pattern: p}
+	return &Route{mux: m, Method: "GET", Pattern: p}
 }
 
 // POST sets a route with the POST HTTP method.
 func (m *Mux) POST(p string) *Route {
-	return &Route{mux: m, method: "POST", pattern: p}
+	return &Route{mux: m, Method: "POST", Pattern: p}
 }
 
 // PUT sets a route with the PUT HTTP method.
 func (m *Mux) PUT(p string) *Route {
-	return &Route{mux: m, method: "PUT", pattern: p}
+	return &Route{mux: m, Method: "PUT", Pattern: p}
 }
 
 // PATCH sets a route with the PATCH HTTP method.
 func (m *Mux) PATCH(p string) *Route {
-	return &Route{mux: m, method: "PATCH", pattern: p}
+	return &Route{mux: m, Method: "PATCH", Pattern: p}
 }
 
 // DELETE sets a route with the DELETE HTTP method.
 func (m *Mux) DELETE(p string) *Route {
-	return &Route{mux: m, method: "DELETE", pattern: p, middlewares: m.middlewares}
+	return &Route{mux: m, Method: "DELETE", Pattern: p, middlewares: m.middlewares}
 }
 
 // Use adds middlewares to a specific route.
@@ -113,11 +109,10 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// set current route in request context
-	currentRoute := MatchedRoute{Method: route.method, Pattern: route.pattern}
-	ctx = context.WithValue(ctx, currentRouteContextKey, currentRoute)
+	ctx = context.WithValue(ctx, currentRouteContextKey, route)
 
 	// set params in request context
-	params := extractParams(route.pattern, r.URL.Path)
+	params := extractParams(route.Pattern, r.URL.Path)
 	ctx = context.WithValue(ctx, paramsContextKey, params)
 
 	// handle request
@@ -125,8 +120,8 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // CurrentRoute gets matched route from the request context.
-func CurrentRoute(r *http.Request) MatchedRoute {
-	return r.Context().Value(currentRouteContextKey).(MatchedRoute)
+func CurrentRoute(r *http.Request) *Route {
+	return r.Context().Value(currentRouteContextKey).(*Route)
 }
 
 // Params gets URL params from the request context.
@@ -141,11 +136,11 @@ func matchRoutes(r *http.Request, routes []Route) *Route {
 	pathParts := strings.Split(path, "/")
 
 	match := func(route *Route) bool {
-		if route.method != method {
+		if route.Method != method {
 			return false
 		}
 
-		patternParts := strings.Split(route.pattern, "/")
+		patternParts := strings.Split(route.Pattern, "/")
 		if len(patternParts) != len(pathParts) {
 			return false
 		}
