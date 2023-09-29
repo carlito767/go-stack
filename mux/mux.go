@@ -178,8 +178,8 @@ func extractParams(pattern, path string) map[string]string {
 }
 
 func wrapMiddlewares(handler http.Handler, middlewares ...Middleware) http.Handler {
-	for _, middleware := range middlewares {
-		handler = middleware(handler)
+	for i := range middlewares {
+		handler = middlewares[len(middlewares)-1-i](handler)
 	}
 	return handler
 }

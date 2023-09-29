@@ -22,7 +22,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 func middleware1(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// add logic here
-		w.Write([]byte("1..."))
+		w.Write([]byte("1"))
 
 		next.ServeHTTP(w, r)
 	})
@@ -31,7 +31,7 @@ func middleware1(next http.Handler) http.Handler {
 func middleware2(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// add logic here
-		w.Write([]byte("2..."))
+		w.Write([]byte("2"))
 
 		next.ServeHTTP(w, r)
 	})
@@ -40,7 +40,7 @@ func middleware2(next http.Handler) http.Handler {
 func middleware3(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// add logic here
-		w.Write([]byte("3..."))
+		w.Write([]byte("3"))
 
 		next.ServeHTTP(w, r)
 	})
@@ -72,7 +72,7 @@ func TestRouter(t *testing.T) {
 	}
 
 	// check middlewares
-	expected := "3...2...1...logging\n"
+	expected := "logging\n123"
 	if w.Body.String() != expected {
 		t.Fatalf("response body expected: %#v, got: %#v", expected, w.Body.String())
 	}
