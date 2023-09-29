@@ -30,6 +30,18 @@ type Route struct {
 	handler     http.Handler
 }
 
+type MatchedRoute struct {
+	Method  string
+	Pattern string
+}
+
+type muxContextKey uint
+
+const (
+	currentRouteContextKey muxContextKey = iota
+	paramsContextKey
+)
+
 func NewRouter() *Mux {
 	return &Mux{NotFound: http.NotFound}
 }
@@ -84,47 +96,70 @@ func (r *Route) ThenFunc(h http.HandlerFunc) {
 
 // ServeHTTP implements the http.Handler interface for the router.
 func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path
-	method := r.Method
-
-	for _, route := range m.routes {
-		if route.method == method && pathMatch(route.pattern, path) {
-			// set params in request context
-			params := extractParams(route.pattern, path)
-			ctx := r.Context()
-			ctx = context.WithValue(ctx, "params", params)
-			r = r.WithContext(ctx)
-
-			// handle request
-			handler := wrapMiddlewares(route.handler, route.middlewares...)
-			handler.ServeHTTP(w, r)
-			return
-		}
+	route := matchRoutes(r, m.routes)
+	if route == nil {
+		m.NotFound(w, r)
+		return
 	}
 
-	m.NotFound(w, r)
+	ctx := r.Context()
+
+	// set current route in request context
+	currentRoute := MatchedRoute{Method: route.method, Pattern: route.pattern}
+	ctx = context.WithValue(ctx, currentRouteContextKey, currentRoute)
+
+	// set params in request context
+	params := extractParams(route.pattern, r.URL.Path)
+	ctx = context.WithValue(ctx, paramsContextKey, params)
+
+	// handle request
+	handler := wrapMiddlewares(route.handler, route.middlewares...)
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// CurrentRoute gets matched route from the request context.
+func CurrentRoute(r *http.Request) MatchedRoute {
+	return r.Context().Value(currentRouteContextKey).(MatchedRoute)
 }
 
 // Params gets URL params from the request context.
 func Params(r *http.Request) map[string]string {
-	return r.Context().Value("params").(map[string]string)
+	return r.Context().Value(paramsContextKey).(map[string]string)
 }
 
-func pathMatch(pattern, path string) bool {
-	patternParts := strings.Split(pattern, "/")
+func matchRoutes(r *http.Request, routes []Route) *Route {
+	method := r.Method
+	path := r.URL.Path
+
 	pathParts := strings.Split(path, "/")
 
-	if len(patternParts) != len(pathParts) {
-		return false
+	match := func(route *Route) bool {
+		if route.method != method {
+			return false
+		}
+
+		patternParts := strings.Split(route.pattern, "/")
+		if len(patternParts) != len(pathParts) {
+			return false
+		}
+
+		for i, part := range patternParts {
+			if part != pathParts[i] && !strings.HasPrefix(part, ":") {
+				return false
+			}
+		}
+
+		return true
 	}
 
-	for i, part := range patternParts {
-		if part != pathParts[i] && !strings.HasPrefix(part, ":") {
-			return false
+	for _, route := range routes {
+		if match(&route) {
+			// matched route
+			return &route
 		}
 	}
 
-	return true
+	return nil
 }
 
 func extractParams(pattern, path string) map[string]string {
