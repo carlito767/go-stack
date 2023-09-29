@@ -58,14 +58,24 @@ func TestRouter(t *testing.T) {
 		w.WriteHeader(http.StatusNotFound)
 	})
 
-	// add routes to the router with middleware
+	// set routes
+	router.GET("/nil").Then(nil)
+
 	router.GET("/path/:id").
 		Use(middleware1, middleware2, middleware3).
 		Then(testHandler)
 
-	// test the router with a valid route
-	r := httptest.NewRequest("GET", "/path/123", nil)
+	// test the router with an invalid handler
+	r := httptest.NewRequest("GET", "/nil", nil)
 	w := httptest.NewRecorder()
+	router.ServeHTTP(w, r)
+	if w.Code != http.StatusOK {
+		t.Errorf("status code expected: %d, got: %d", http.StatusOK, w.Code)
+	}
+
+	// test the router with a valid route
+	r = httptest.NewRequest("GET", "/path/123", nil)
+	w = httptest.NewRecorder()
 	router.ServeHTTP(w, r)
 	if w.Code != http.StatusOK {
 		t.Errorf("status code expected: %d, got: %d", http.StatusOK, w.Code)
@@ -80,8 +90,8 @@ func TestRouter(t *testing.T) {
 	// test the router with an invalid route
 	paths := []string{"/invalid/path", "/1/2/3"}
 	for _, path := range paths {
-		r := httptest.NewRequest("GET", path, nil)
-		w := httptest.NewRecorder()
+		r = httptest.NewRequest("GET", path, nil)
+		w = httptest.NewRecorder()
 		router.NotFound = notFoundHandler // set custom 404 handler
 		router.ServeHTTP(w, r)
 		if w.Code != http.StatusNotFound {

@@ -85,6 +85,10 @@ func (r *Route) Use(middlewares ...Middleware) *Route {
 
 // Then sets the final handler for a route using an http.Handler.
 func (r *Route) Then(h http.Handler) {
+	if h == nil {
+		h = http.DefaultServeMux
+	}
+
 	middlewares := append(r.mux.middlewares, r.middlewares...)
 	for i := range middlewares {
 		h = middlewares[len(middlewares)-1-i](h)
