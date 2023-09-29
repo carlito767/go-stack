@@ -54,22 +54,22 @@ func (m *Mux) Use(middlewares ...Middleware) *Mux {
 
 // GET sets a route with the GET HTTP method.
 func (m *Mux) GET(p string) *Route {
-	return &Route{mux: m, method: "GET", pattern: p, middlewares: m.middlewares}
+	return &Route{mux: m, method: "GET", pattern: p}
 }
 
 // POST sets a route with the POST HTTP method.
 func (m *Mux) POST(p string) *Route {
-	return &Route{mux: m, method: "POST", pattern: p, middlewares: m.middlewares}
+	return &Route{mux: m, method: "POST", pattern: p}
 }
 
 // PUT sets a route with the PUT HTTP method.
 func (m *Mux) PUT(p string) *Route {
-	return &Route{mux: m, method: "PUT", pattern: p, middlewares: m.middlewares}
+	return &Route{mux: m, method: "PUT", pattern: p}
 }
 
 // PATCH sets a route with the PATCH HTTP method.
 func (m *Mux) PATCH(p string) *Route {
-	return &Route{mux: m, method: "PATCH", pattern: p, middlewares: m.middlewares}
+	return &Route{mux: m, method: "PATCH", pattern: p}
 }
 
 // DELETE sets a route with the DELETE HTTP method.
@@ -85,6 +85,10 @@ func (r *Route) Use(middlewares ...Middleware) *Route {
 
 // Then sets the final handler for a route using an http.Handler.
 func (r *Route) Then(h http.Handler) {
+	middlewares := append(r.mux.middlewares, r.middlewares...)
+	for i := range middlewares {
+		h = middlewares[len(middlewares)-1-i](h)
+	}
 	r.handler = h
 	r.mux.routes = append(r.mux.routes, *r)
 }
@@ -113,8 +117,7 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, paramsContextKey, params)
 
 	// handle request
-	handler := wrapMiddlewares(route.handler, route.middlewares...)
-	handler.ServeHTTP(w, r.WithContext(ctx))
+	route.handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
 // CurrentRoute gets matched route from the request context.
@@ -175,11 +178,4 @@ func extractParams(pattern, path string) map[string]string {
 	}
 
 	return params
-}
-
-func wrapMiddlewares(handler http.Handler, middlewares ...Middleware) http.Handler {
-	for i := range middlewares {
-		handler = middlewares[len(middlewares)-1-i](handler)
-	}
-	return handler
 }
