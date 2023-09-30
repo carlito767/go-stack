@@ -129,17 +129,10 @@ func TestRoutes(t *testing.T) {
 	}
 }
 
-func TestContext(t *testing.T) {
+func TestParams(t *testing.T) {
 	router := mux.NewRouter()
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// verify that current route is correct
-		currentRoute := mux.CurrentRoute(r)
-		expectedRoute := mux.Route{Method: "GET", Pattern: "/path/:id"}
-		if currentRoute.Method != expectedRoute.Method || currentRoute.Pattern != expectedRoute.Pattern {
-			t.Errorf("route expected: %v, got: %v", expectedRoute, currentRoute)
-		}
-
 		// verify that params are correct
 		params := mux.Params(r)
 		expectedParams := map[string]string{"id": "123"}

@@ -18,15 +18,6 @@ func loggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func currentRouteMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		currentRoute := mux.CurrentRoute(r)
-		fmt.Printf("matched pattern: %s\n", currentRoute.Pattern)
-
-		next.ServeHTTP(w, r)
-	})
-}
-
 // Handlers
 
 func pathHandler(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +43,7 @@ func main() {
 	router.Use(loggingMiddleware)
 
 	// set routes
-	router.GET("/path/:id").Use(currentRouteMiddleware).ThenFunc(pathHandler)
+	router.GET("/path/:id").ThenFunc(pathHandler)
 
 	// start server
 	addr := fmt.Sprintf("%v:%v", config.Host, config.Port)
