@@ -46,29 +46,34 @@ func (m *Mux) Use(middlewares ...Middleware) *Mux {
 	return m
 }
 
+// Handle sets a route with a custom HTTP method.
+func (m *Mux) Handle(method string, pattern string) *Route {
+	return &Route{mux: m, method: method, pattern: pattern}
+}
+
 // GET sets a route with the GET HTTP method.
 func (m *Mux) GET(p string) *Route {
-	return &Route{mux: m, method: "GET", pattern: p}
+	return m.Handle("GET", p)
 }
 
 // POST sets a route with the POST HTTP method.
 func (m *Mux) POST(p string) *Route {
-	return &Route{mux: m, method: "POST", pattern: p}
+	return m.Handle("POST", p)
 }
 
 // PUT sets a route with the PUT HTTP method.
 func (m *Mux) PUT(p string) *Route {
-	return &Route{mux: m, method: "PUT", pattern: p}
+	return m.Handle("PUT", p)
 }
 
 // PATCH sets a route with the PATCH HTTP method.
 func (m *Mux) PATCH(p string) *Route {
-	return &Route{mux: m, method: "PATCH", pattern: p}
+	return m.Handle("PATCH", p)
 }
 
 // DELETE sets a route with the DELETE HTTP method.
 func (m *Mux) DELETE(p string) *Route {
-	return &Route{mux: m, method: "DELETE", pattern: p, middlewares: m.middlewares}
+	return m.Handle("DELETE", p)
 }
 
 // Use adds middlewares to a specific route.
@@ -79,8 +84,14 @@ func (r *Route) Use(middlewares ...Middleware) *Route {
 
 // Then sets the final handler for a route using an http.Handler.
 func (r *Route) Then(h http.Handler) {
+	if r.method == "" {
+		panic("method must not be empty")
+	}
+	if len(r.pattern) < 1 || r.pattern[0] != '/' {
+		panic("pattern must begin with '/'")
+	}
 	if h == nil {
-		h = http.DefaultServeMux
+		panic("handler must not be nil")
 	}
 
 	middlewares := append(r.mux.middlewares, r.middlewares...)

@@ -17,6 +17,65 @@ func m(msg string) func(http.Handler) http.Handler {
 	}
 }
 
+func TestPanic(t *testing.T) {
+	h := http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})
+
+	tests := []struct {
+		name    string
+		method  string
+		pattern string
+		handler http.Handler
+		msg     string
+	}{
+		{
+			name:    "empty method",
+			method:  "",
+			pattern: "/path",
+			handler: h,
+			msg:     "method must not be empty",
+		},
+		{
+			name:    "empty path",
+			method:  "GET",
+			pattern: "",
+			handler: h,
+			msg:     "pattern must begin with '/'",
+		},
+		{
+			name:    "invalid path",
+			method:  "GET",
+			pattern: "invalid/path",
+			handler: h,
+			msg:     "pattern must begin with '/'",
+		},
+		{
+			name:    "invalid handler",
+			method:  "GET",
+			pattern: "/",
+			handler: nil,
+			msg:     "handler must not be nil",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r == nil {
+					t.Errorf("the code did not panic")
+				} else {
+					msg := r.(string)
+					if msg != tt.msg {
+						t.Errorf("panic message expected: '%s', got: '%s'", tt.msg, msg)
+					}
+				}
+			}()
+
+			router := mux.NewRouter()
+			router.Handle(tt.method, tt.pattern).Use().Then(tt.handler)
+		})
+	}
+}
+
 func TestRouter(t *testing.T) {
 	router := mux.NewRouter()
 	router.Use(m("1"), m("2"))
@@ -30,23 +89,13 @@ func TestRouter(t *testing.T) {
 	})
 
 	// set routes
-	router.GET("/nil").Then(nil)
-
 	router.GET("/path/:id").
 		Use(m("3"), m("4")).
 		Then(testHandler)
 
-	// test the router with an invalid handler
-	r := httptest.NewRequest("GET", "/nil", nil)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, r)
-	if w.Code != http.StatusOK {
-		t.Errorf("status code expected: %d, got: %d", http.StatusOK, w.Code)
-	}
-
 	// test the router with a valid route
-	r = httptest.NewRequest("GET", "/path/123", nil)
-	w = httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/path/123", nil)
+	w := httptest.NewRecorder()
 	router.ServeHTTP(w, r)
 	if w.Code != http.StatusOK {
 		t.Errorf("status code expected: %d, got: %d", http.StatusOK, w.Code)
