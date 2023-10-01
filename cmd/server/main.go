@@ -5,24 +5,9 @@ import (
 	"net/http"
 
 	"github.com/carlito767/go-stack/clp"
+	"github.com/carlito767/go-stack/middleware"
 	"github.com/carlito767/go-stack/mux"
 )
-
-// Middlewares
-
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("[%s] %v\n", r.Method, r.URL)
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-// Handlers
-
-func pathHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Path with ID:", mux.Params(r)["id"])
-}
 
 func main() {
 	// load config
@@ -42,7 +27,7 @@ func main() {
 	router := mux.NewRouter()
 
 	// set global middlewares
-	router.Use(loggingMiddleware)
+	router.Use(middleware.Logger)
 
 	// set routes
 	router.GET("/path/:id").ThenFunc(pathHandler)
@@ -51,4 +36,8 @@ func main() {
 	addr := fmt.Sprintf("%v:%v", config.Host, config.Port)
 	fmt.Printf("server listening on %s\n", addr)
 	http.ListenAndServe(addr, router)
+}
+
+func pathHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Path with ID:", mux.Params(r)["id"])
 }
