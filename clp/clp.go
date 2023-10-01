@@ -24,7 +24,7 @@ The following features are supported:
 	err := clp.ParseOptions(&options)
 	err := clp.ParseOptionsFromArgs(&options, args)
 
-See commands_test.go and options_test.go for examples.
+See cmd/server/main.go for example.
 
 # Command-line option syntax
 

@@ -4,6 +4,15 @@ Package mux implements a request router and dispatcher for matching incoming req
 Inspired by:
 
 	https://github.com/nmerouze/stack
+
+# Usage
+
+	router := mux.NewRouter()
+	router.Use(globalMiddleware1, globalMiddleware2, ...)
+	router.Handle(method, pattern).Use(middleware1, middleware2, ...).Then(handler)
+	http.ListenAndServe(addr, router)
+
+	See cmd/server/main.go for example.
 */
 package mux
 

@@ -40,6 +40,8 @@ func main() {
 
 	// create router
 	router := mux.NewRouter()
+
+	// set global middlewares
 	router.Use(loggingMiddleware)
 
 	// set routes
