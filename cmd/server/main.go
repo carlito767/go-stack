@@ -47,6 +47,9 @@ func panicHandler(w http.ResponseWriter, r *http.Request) {
 func statusHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Params(r)
 	code, _ := strconv.Atoi(params["code"])
+	if http.StatusText(code) == "" {
+		code = http.StatusBadRequest
+	}
 	w.WriteHeader(code)
 	fmt.Fprintf(w, "Status code: %d %s\n", code, http.StatusText(code))
 }

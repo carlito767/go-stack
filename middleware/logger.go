@@ -19,13 +19,23 @@ func NewLogger(tp TimeProvider, color bool) func(next http.Handler) http.Handler
 				statusCode := lrw.statusCode
 				var colorSeq, resetSeq string
 				if color {
-					switch statusCode {
-					case http.StatusOK:
+					// https://zetcode.com/golang/terminal-colour/
+					switch {
+					case statusCode >= 100 && statusCode <= 199:
+						// 1xx informational response
+						colorSeq = "\033[34m" // blue
+					case statusCode >= 200 && statusCode <= 299:
+						// 2xx success
 						colorSeq = "\033[32m" // green
-					case http.StatusInternalServerError:
-						colorSeq = "\033[31m" // red
-					default:
+					case statusCode >= 300 && statusCode <= 399:
+						// 3xx redirection
 						colorSeq = "\033[33m" // yellow
+						// 4xx client errors
+					case statusCode >= 400 && statusCode <= 499:
+						colorSeq = "\033[31m" // red
+						// 5xx server errors
+					case statusCode >= 500 && statusCode <= 599:
+						colorSeq = "\033[35m" // purple
 					}
 					resetSeq = "\033[0m" // reset color
 				}

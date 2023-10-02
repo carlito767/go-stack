@@ -24,22 +24,40 @@ func TestLogger(t *testing.T) {
 			expectedLog: "[GET] \"/\" (42s)\n200 OK\n",
 		},
 		{
+			name:        "100 with color",
+			color:       true,
+			code:        100,
+			expectedLog: "[GET] \"/\" (42s)\n\x1b[34m100 Continue\x1b[0m\n",
+		},
+		{
 			name:        "200 with color",
 			color:       true,
 			code:        200,
 			expectedLog: "[GET] \"/\" (42s)\n\x1b[32m200 OK\x1b[0m\n",
 		},
 		{
+			name:        "300 with color",
+			color:       true,
+			code:        300,
+			expectedLog: "[GET] \"/\" (42s)\n\x1b[33m300 Multiple Choices\x1b[0m\n",
+		},
+		{
 			name:        "400 with color",
 			color:       true,
 			code:        400,
-			expectedLog: "[GET] \"/\" (42s)\n\x1b[33m400 Bad Request\x1b[0m\n",
+			expectedLog: "[GET] \"/\" (42s)\n\x1b[31m400 Bad Request\x1b[0m\n",
 		},
 		{
 			name:        "500 with color",
 			color:       true,
 			code:        500,
-			expectedLog: "[GET] \"/\" (42s)\n\x1b[31m500 Internal Server Error\x1b[0m\n",
+			expectedLog: "[GET] \"/\" (42s)\n\x1b[35m500 Internal Server Error\x1b[0m\n",
+		},
+		{
+			name:        "invalid code with color",
+			color:       true,
+			code:        0,
+			expectedLog: "[GET] \"/\" (42s)\n\x1b[31m400 Bad Request\x1b[0m\n",
 		},
 	}
 	for _, tt := range tests {
@@ -52,7 +70,11 @@ func TestLogger(t *testing.T) {
 			}()
 
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(tt.code)
+				code := tt.code
+				if http.StatusText(code) == "" {
+					code = http.StatusBadRequest
+				}
+				w.WriteHeader(code)
 			})
 
 			tp := middleware.FakeTimeProvider{}
@@ -67,7 +89,7 @@ func TestLogger(t *testing.T) {
 			out, _ := io.ReadAll(r)
 
 			log := string(out)
-			if tt.expectedLog != log {
+			if log != tt.expectedLog {
 				t.Errorf("log expected:%q, got:%q", tt.expectedLog, log)
 			}
 		})
