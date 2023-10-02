@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/carlito767/go-stack/clp"
 	"github.com/carlito767/go-stack/middleware"
@@ -31,7 +32,7 @@ func main() {
 
 	// set routes
 	router.GET("/panic").ThenFunc(panicHandler)
-	router.GET("/path/:id").ThenFunc(pathHandler)
+	router.GET("/status/:code").ThenFunc(statusHandler)
 
 	// start server
 	addr := fmt.Sprintf("%v:%v", config.Host, config.Port)
@@ -43,6 +44,9 @@ func panicHandler(w http.ResponseWriter, r *http.Request) {
 	panic("panic test")
 }
 
-func pathHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Path with ID:", mux.Params(r)["id"])
+func statusHandler(w http.ResponseWriter, r *http.Request) {
+	params := mux.Params(r)
+	code, _ := strconv.Atoi(params["code"])
+	w.WriteHeader(code)
+	fmt.Fprintf(w, "Status code: %d %s\n", code, http.StatusText(code))
 }

@@ -6,10 +6,10 @@ import (
 )
 
 // Logger is a middleware that logs every request with some useful data.
-var Logger = NewLogger(MockTimeProvider{})
+var Logger = NewLogger(MockTimeProvider{}, true)
 
 // NewLogger creates a middleware that logs every request with some useful data.
-func NewLogger(tp TimeProvider) func(next http.Handler) http.Handler {
+func NewLogger(tp TimeProvider, color bool) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			lrw := newLoggingResponseWriter(w)
@@ -17,7 +17,21 @@ func NewLogger(tp TimeProvider) func(next http.Handler) http.Handler {
 			t := tp.Now()
 			defer func() {
 				statusCode := lrw.statusCode
-				fmt.Printf("[%s] %q (%v)\n%d %s\n", r.Method, r.URL.String(), tp.Since(t), statusCode, http.StatusText(statusCode))
+				var colorSeq, resetSeq string
+				if color {
+					switch statusCode {
+					case http.StatusOK:
+						colorSeq = "\033[32m" // green
+					case http.StatusInternalServerError:
+						colorSeq = "\033[31m" // red
+					default:
+						colorSeq = "\033[33m" // yellow
+					}
+					resetSeq = "\033[0m" // reset color
+				}
+				fmt.Printf("[%s] %q (%v)\n", r.Method, r.URL.String(), tp.Since(t))
+				msg := fmt.Sprintf("%d %s", statusCode, http.StatusText(statusCode))
+				fmt.Printf("%s%s%s\n", colorSeq, msg, resetSeq)
 			}()
 
 			next.ServeHTTP(lrw, r)
