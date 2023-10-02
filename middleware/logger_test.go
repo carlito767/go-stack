@@ -23,17 +23,18 @@ func TestLogger(t *testing.T) {
 		w.WriteHeader(http.StatusNotFound)
 	})
 
-	request := httptest.NewRequest("GET", "/example", nil)
-	responseRecorder := httptest.NewRecorder()
 	tp := middleware.FakeTimeProvider{}
-	logger := middleware.NewLogger(tp)
-	router := logger(handler)
-	router.ServeHTTP(responseRecorder, request)
+	logger := middleware.NewLogger(tp)(handler)
+
+	req := httptest.NewRequest("GET", "/", nil)
+	res := httptest.NewRecorder()
+
+	logger.ServeHTTP(res, req)
 
 	w.Close()
 	out, _ := io.ReadAll(r)
 
-	expectedLog := fmt.Sprintf("[GET] \"/example\" (%v)\n404 Not Found\n", tp.Since(tp.Now()))
+	expectedLog := fmt.Sprintf("[GET] \"/\" (%v)\n404 Not Found\n", tp.Since(tp.Now()))
 	actualLog := string(out)
 	if expectedLog != actualLog {
 		t.Errorf("log expected:\n%s\n, got:\n%s\n", expectedLog, actualLog)

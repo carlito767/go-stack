@@ -94,28 +94,28 @@ func TestRouter(t *testing.T) {
 		Then(testHandler)
 
 	// test the router with a valid route
-	r := httptest.NewRequest("GET", "/path/123", nil)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, r)
-	if w.Code != http.StatusOK {
-		t.Errorf("status code expected: %d, got: %d", http.StatusOK, w.Code)
+	req := httptest.NewRequest("GET", "/path/123", nil)
+	res := httptest.NewRecorder()
+	router.ServeHTTP(res, req)
+	if res.Code != http.StatusOK {
+		t.Errorf("status code expected: %d, got: %d", http.StatusOK, res.Code)
 	}
 
 	// check middlewares
 	expected := "1234"
-	if w.Body.String() != expected {
-		t.Fatalf("response body expected: %#v, got: %#v", expected, w.Body.String())
+	if res.Body.String() != expected {
+		t.Fatalf("response body expected: %#v, got: %#v", expected, res.Body.String())
 	}
 
 	// test the router with an invalid route
 	paths := []string{"/invalid/path", "/1/2/3"}
 	for _, path := range paths {
-		r = httptest.NewRequest("GET", path, nil)
-		w = httptest.NewRecorder()
+		req = httptest.NewRequest("GET", path, nil)
+		res = httptest.NewRecorder()
 		router.NotFound = notFoundHandler // set custom 404 handler
-		router.ServeHTTP(w, r)
-		if w.Code != http.StatusNotFound {
-			t.Errorf("status code expected: %d, got: %d", http.StatusNotFound, w.Code)
+		router.ServeHTTP(res, req)
+		if res.Code != http.StatusNotFound {
+			t.Errorf("status code expected: %d, got: %d", http.StatusNotFound, res.Code)
 		}
 	}
 }
@@ -145,34 +145,34 @@ func TestRoutes(t *testing.T) {
 		delete = true
 	})
 
-	w := httptest.NewRecorder()
+	res := httptest.NewRecorder()
 
-	r, _ := http.NewRequest("GET", "/get", nil)
-	m.ServeHTTP(w, r)
+	req, _ := http.NewRequest("GET", "/get", nil)
+	m.ServeHTTP(res, req)
 	if !get {
 		t.Fatalf("routing GET failed")
 	}
 
-	r, _ = http.NewRequest("POST", "/post", nil)
-	m.ServeHTTP(w, r)
+	req, _ = http.NewRequest("POST", "/post", nil)
+	m.ServeHTTP(res, req)
 	if !post {
 		t.Fatalf("routing POST failed")
 	}
 
-	r, _ = http.NewRequest("PUT", "/put", nil)
-	m.ServeHTTP(w, r)
+	req, _ = http.NewRequest("PUT", "/put", nil)
+	m.ServeHTTP(res, req)
 	if !put {
 		t.Fatalf("routing PUT failed")
 	}
 
-	r, _ = http.NewRequest("PATCH", "/patch", nil)
-	m.ServeHTTP(w, r)
+	req, _ = http.NewRequest("PATCH", "/patch", nil)
+	m.ServeHTTP(res, req)
 	if !patch {
 		t.Fatalf("routing PATCH failed")
 	}
 
-	r, _ = http.NewRequest("DELETE", "/delete", nil)
-	m.ServeHTTP(w, r)
+	req, _ = http.NewRequest("DELETE", "/delete", nil)
+	m.ServeHTTP(res, req)
 	if !delete {
 		t.Fatalf("routing DELETE failed")
 	}
