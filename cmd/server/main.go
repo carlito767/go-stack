@@ -27,15 +27,20 @@ func main() {
 	router := mux.NewRouter()
 
 	// set global middlewares
-	router.Use(middleware.Logger)
+	router.Use(middleware.Logger, middleware.Recoverer)
 
 	// set routes
+	router.GET("/panic").ThenFunc(panicHandler)
 	router.GET("/path/:id").ThenFunc(pathHandler)
 
 	// start server
 	addr := fmt.Sprintf("%v:%v", config.Host, config.Port)
 	fmt.Printf("server listening on %s\n", addr)
 	http.ListenAndServe(addr, router)
+}
+
+func panicHandler(w http.ResponseWriter, r *http.Request) {
+	panic("panic test")
 }
 
 func pathHandler(w http.ResponseWriter, r *http.Request) {
