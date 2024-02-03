@@ -30,11 +30,11 @@ func NewLogger(tp TimeProvider, color bool) func(next http.Handler) http.Handler
 					case statusCode >= 300 && statusCode <= 399:
 						// 3xx redirection
 						colorSeq = "\033[33m" // yellow
-						// 4xx client errors
 					case statusCode >= 400 && statusCode <= 499:
+						// 4xx client errors
 						colorSeq = "\033[31m" // red
-						// 5xx server errors
 					case statusCode >= 500 && statusCode <= 599:
+						// 5xx server errors
 						colorSeq = "\033[35m" // purple
 					}
 					resetSeq = "\033[0m" // reset color
