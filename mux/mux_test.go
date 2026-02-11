@@ -23,35 +23,35 @@ func TestPanic(t *testing.T) {
 	tests := []struct {
 		name    string
 		method  string
-		pattern string
+		path    string
 		handler http.Handler
 		msg     string
 	}{
 		{
 			name:    "empty method",
 			method:  "",
-			pattern: "/path",
+			path:    "/path",
 			handler: h,
 			msg:     "method must not be empty",
 		},
 		{
 			name:    "empty path",
 			method:  "GET",
-			pattern: "",
+			path:    "",
 			handler: h,
-			msg:     "pattern must begin with '/'",
+			msg:     "path must begin with '/'",
 		},
 		{
 			name:    "invalid path",
 			method:  "GET",
-			pattern: "invalid/path",
+			path:    "invalid/path",
 			handler: h,
-			msg:     "pattern must begin with '/'",
+			msg:     "path must begin with '/'",
 		},
 		{
 			name:    "invalid handler",
 			method:  "GET",
-			pattern: "/",
+			path:    "/",
 			handler: nil,
 			msg:     "handler must not be nil",
 		},
@@ -71,7 +71,7 @@ func TestPanic(t *testing.T) {
 			}()
 
 			router := mux.NewRouter()
-			router.Handle(tt.method, tt.pattern).Use().Then(tt.handler)
+			router.Handle(tt.method, tt.path).Use().Then(tt.handler)
 		})
 	}
 }
@@ -89,7 +89,7 @@ func TestRouter(t *testing.T) {
 	})
 
 	// set routes
-	router.GET("/path/:id").
+	router.GET("/path/{id}").
 		Use(m("3"), m("4")).
 		Then(testHandler)
 
@@ -183,16 +183,16 @@ func TestParams(t *testing.T) {
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// verify that params are correct
-		params := mux.Params(r)
 		expectedParams := map[string]string{"id": "123"}
 		for key, value := range expectedParams {
-			if params[key] != value {
-				t.Errorf("param expected: %s=%s, got: %s=%s", key, value, key, params[key])
+			v := r.PathValue(key)
+			if v != value {
+				t.Errorf("param expected: %s=%s, got: %s=%s", key, value, key, v)
 			}
 		}
 	})
 
-	router.GET("/path/:id").Then(testHandler)
+	router.GET("/path/{id}").Then(testHandler)
 
 	req := httptest.NewRequest("GET", "/path/123", nil)
 	rec := httptest.NewRecorder()

@@ -9,7 +9,7 @@ Inspired by:
 
 	router := mux.NewRouter()
 	router.Use(globalMiddleware1, globalMiddleware2, ...)
-	router.Handle(method, pattern).Use(middleware1, middleware2, ...).Then(handler)
+	router.Handle(method, path).Use(middleware1, middleware2, ...).Then(handler)
 	http.ListenAndServe(addr, router)
 
 	See cmd/server/main.go for example.
@@ -17,24 +17,23 @@ Inspired by:
 package mux
 
 import (
-	"context"
+	"fmt"
 	"net/http"
-	"strings"
 )
 
 type Mux struct {
 	NotFound http.HandlerFunc
 
+	mux         *http.ServeMux
 	middlewares []middleware
-	routes      []route
 }
 
 type middleware = func(http.Handler) http.Handler
 
 type route struct {
-	mux         *Mux
+	m           *Mux
 	method      string
-	pattern     string
+	path        string
 	middlewares []middleware
 	handler     http.Handler
 }
@@ -46,7 +45,10 @@ const (
 )
 
 func NewRouter() *Mux {
-	return &Mux{NotFound: http.NotFound}
+	return &Mux{
+		NotFound: http.NotFound,
+		mux:      http.NewServeMux(),
+	}
 }
 
 // Use adds global middlewares to the router.
@@ -56,8 +58,8 @@ func (m *Mux) Use(middlewares ...middleware) *Mux {
 }
 
 // Handle sets a route with a custom HTTP method.
-func (m *Mux) Handle(method string, pattern string) *route {
-	return &route{mux: m, method: method, pattern: pattern}
+func (m *Mux) Handle(method string, path string) *route {
+	return &route{m: m, method: method, path: path}
 }
 
 // GET sets a route with the GET HTTP method.
@@ -96,19 +98,21 @@ func (r *route) Then(h http.Handler) {
 	if r.method == "" {
 		panic("method must not be empty")
 	}
-	if len(r.pattern) < 1 || r.pattern[0] != '/' {
-		panic("pattern must begin with '/'")
+	if len(r.path) < 1 || r.path[0] != '/' {
+		panic("path must begin with '/'")
 	}
 	if h == nil {
 		panic("handler must not be nil")
 	}
 
-	middlewares := append(r.mux.middlewares, r.middlewares...)
+	middlewares := append(r.m.middlewares, r.middlewares...)
 	for i := range middlewares {
 		h = middlewares[len(middlewares)-1-i](h)
 	}
 	r.handler = h
-	r.mux.routes = append(r.mux.routes, *r)
+
+	pattern := fmt.Sprintf("%s %s", r.method, r.path)
+	r.m.mux.Handle(pattern, h)
 }
 
 // ThenFunc sets the final handler for a route using an http.HandlerFunc.
@@ -118,73 +122,5 @@ func (r *route) ThenFunc(h http.HandlerFunc) {
 
 // ServeHTTP implements the http.Handler interface for the router.
 func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	route := matchRoutes(r, m.routes)
-	if route == nil {
-		m.NotFound(w, r)
-		return
-	}
-
-	ctx := r.Context()
-
-	// set params in request context
-	params := extractParams(route.pattern, r.URL.Path)
-	ctx = context.WithValue(ctx, paramsContextKey, params)
-
-	// handle request
-	route.handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
-// Params gets URL params from the request context.
-func Params(r *http.Request) map[string]string {
-	return r.Context().Value(paramsContextKey).(map[string]string)
-}
-
-func matchRoutes(r *http.Request, routes []route) *route {
-	method := r.Method
-	path := r.URL.Path
-
-	pathParts := strings.Split(path, "/")
-
-	match := func(route *route) bool {
-		if route.method != method {
-			return false
-		}
-
-		patternParts := strings.Split(route.pattern, "/")
-		if len(patternParts) != len(pathParts) {
-			return false
-		}
-
-		for i, part := range patternParts {
-			if part != pathParts[i] && !strings.HasPrefix(part, ":") {
-				return false
-			}
-		}
-
-		return true
-	}
-
-	for _, route := range routes {
-		if match(&route) {
-			// matched route
-			return &route
-		}
-	}
-
-	return nil
-}
-
-func extractParams(pattern, path string) map[string]string {
-	params := make(map[string]string)
-	patternParts := strings.Split(pattern, "/")
-	pathParts := strings.Split(path, "/")
-
-	for i, part := range patternParts {
-		if strings.HasPrefix(part, ":") && i < len(pathParts) {
-			paramName := part[1:]
-			params[paramName] = pathParts[i]
-		}
-	}
-
-	return params
+	m.mux.ServeHTTP(w, r)
 }

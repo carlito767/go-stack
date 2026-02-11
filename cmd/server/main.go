@@ -32,7 +32,7 @@ func main() {
 
 	// set routes
 	router.GET("/panic").ThenFunc(panicHandler)
-	router.GET("/status/:code").ThenFunc(statusHandler)
+	router.GET("/status/{code}").ThenFunc(statusHandler)
 
 	// start server
 	addr := fmt.Sprintf("%v:%v", config.Host, config.Port)
@@ -45,8 +45,7 @@ func panicHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func statusHandler(w http.ResponseWriter, r *http.Request) {
-	params := mux.Params(r)
-	code, _ := strconv.Atoi(params["code"])
+	code, _ := strconv.Atoi(r.PathValue("code"))
 	if http.StatusText(code) == "" {
 		code = http.StatusBadRequest
 	}
