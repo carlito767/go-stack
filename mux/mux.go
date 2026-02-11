@@ -22,8 +22,6 @@ import (
 )
 
 type Mux struct {
-	NotFound http.HandlerFunc
-
 	mux         *http.ServeMux
 	middlewares []middleware
 }
@@ -46,8 +44,7 @@ const (
 
 func NewRouter() *Mux {
 	return &Mux{
-		NotFound: http.NotFound,
-		mux:      http.NewServeMux(),
+		mux: http.NewServeMux(),
 	}
 }
 
@@ -95,9 +92,6 @@ func (r *route) Use(middlewares ...middleware) *route {
 
 // Then sets the final handler for a route using an http.Handler.
 func (r *route) Then(h http.Handler) {
-	if r.method == "" {
-		panic("method must not be empty")
-	}
 	if len(r.path) < 1 || r.path[0] != '/' {
 		panic("path must begin with '/'")
 	}

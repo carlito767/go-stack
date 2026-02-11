@@ -34,6 +34,9 @@ func main() {
 	router.GET("/panic").ThenFunc(panicHandler)
 	router.GET("/status/{code}").ThenFunc(statusHandler)
 
+	// handle all other routes
+	router.Handle("", "/").ThenFunc(http.NotFound)
+
 	// start server
 	addr := fmt.Sprintf("%v:%v", config.Host, config.Port)
 	fmt.Printf("server listening on %s\n", addr)

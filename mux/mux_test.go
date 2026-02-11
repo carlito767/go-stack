@@ -84,10 +84,6 @@ func TestRouter(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	notFoundHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-	})
-
 	// set routes
 	router.GET("/path/{id}").
 		Use(m("3"), m("4")).
@@ -112,7 +108,6 @@ func TestRouter(t *testing.T) {
 	for _, path := range paths {
 		req = httptest.NewRequest("GET", path, nil)
 		res = httptest.NewRecorder()
-		router.NotFound = notFoundHandler // set custom 404 handler
 		router.ServeHTTP(res, req)
 		if res.Code != http.StatusNotFound {
 			t.Errorf("status code expected: %d, got: %d", http.StatusNotFound, res.Code)
