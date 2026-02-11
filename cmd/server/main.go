@@ -46,9 +46,11 @@ func panicHandler(w http.ResponseWriter, r *http.Request) {
 
 func statusHandler(w http.ResponseWriter, r *http.Request) {
 	code, _ := strconv.Atoi(r.PathValue("code"))
-	if http.StatusText(code) == "" {
-		code = http.StatusBadRequest
+	status := http.StatusText(code)
+	if status == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 	w.WriteHeader(code)
-	fmt.Fprintf(w, "Status code: %d %s\n", code, http.StatusText(code))
+	fmt.Fprintf(w, "Status code: %d %s\n", code, status)
 }
