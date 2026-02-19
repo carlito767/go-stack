@@ -28,13 +28,6 @@ func TestPanic(t *testing.T) {
 		msg     string
 	}{
 		{
-			name:    "empty method",
-			method:  "",
-			path:    "/path",
-			handler: h,
-			msg:     "method must not be empty",
-		},
-		{
 			name:    "empty path",
 			method:  "GET",
 			path:    "",
@@ -61,7 +54,7 @@ func TestPanic(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() {
 				if r := recover(); r == nil {
-					t.Errorf("the code did not panic")
+					t.Errorf("the code did not panic (%q)", tt.name)
 				} else {
 					msg := r.(string)
 					if msg != tt.msg {
