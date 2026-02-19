@@ -1,6 +1,7 @@
 package mux_test
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -185,4 +186,68 @@ func TestParams(t *testing.T) {
 	req := httptest.NewRequest("GET", "/path/123", nil)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
+}
+
+func TestNewSubRouter(t *testing.T) {
+	rooter := mux.NewRouter()
+	apiV0 := rooter.NewSubRouter("/api/v0")
+
+	// register handlers on root and subrouter
+	rooter.GET("/").ThenFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("root"))
+	})
+
+	apiV0.GET("/hello").ThenFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("hello v0"))
+	})
+
+	// create test server
+	server := httptest.NewServer(rooter)
+	defer server.Close()
+
+	tests := []struct {
+		path string
+		want string
+	}{
+		{"/", "root"},
+		{"/api/v0/hello", "hello v0"},
+	}
+
+	for _, tt := range tests {
+		resp, err := http.Get(server.URL + tt.path)
+		if err != nil {
+			t.Fatalf("GET %s failed: %v", tt.path, err)
+		}
+		defer resp.Body.Close()
+		body, _ := io.ReadAll(resp.Body)
+
+		got := string(body)
+		if got != tt.want {
+			t.Errorf("GET %q = %q; want %q", tt.path, got, tt.want)
+		}
+	}
+}
+
+func TestSubRouterPrefixChaining(t *testing.T) {
+	rooter := mux.NewRouter()
+	apiV0 := rooter.NewSubRouter("/api/v0")
+	admin := apiV0.NewSubRouter("/admin")
+
+	admin.GET("/status").ThenFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("admin status"))
+	})
+
+	server := httptest.NewServer(rooter)
+	defer server.Close()
+
+	resp, err := http.Get(server.URL + "/api/v0/admin/status")
+	if err != nil {
+		t.Fatalf("GET failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+
+	if got := string(body); got != "admin status" {
+		t.Errorf("GET /api/v0/admin/status = %q; want %q", got, "admin status")
+	}
 }

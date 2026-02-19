@@ -23,6 +23,7 @@ import (
 
 type Mux struct {
 	mux         *http.ServeMux
+	prefix      string
 	middlewares []middleware
 }
 
@@ -44,7 +45,26 @@ const (
 
 func NewRouter() *Mux {
 	return &Mux{
-		mux: http.NewServeMux(),
+		mux:    http.NewServeMux(),
+		prefix: "",
+	}
+}
+
+// NewSubRouter creates a new sub-router with the given prefix.
+// The returned Mux shares the same underlying ServeMux as the parent,
+// so all handlers are registered on the same ServeMux.
+// The prefix is prepended to all routes registered via HandleFunc on the sub-router.
+//
+// Example:
+//
+//	root := NewMux()
+//	apiV0 := root.NewSubRouter("/api/v0")
+//	apiV0.HandleFunc("/hello", HelloHandler)
+//	// registers "/api/v0/hello" on the shared ServeMux
+func (m *Mux) NewSubRouter(prefix string) *Mux {
+	return &Mux{
+		mux:    m.mux,
+		prefix: m.prefix + prefix,
 	}
 }
 
@@ -56,7 +76,7 @@ func (m *Mux) Use(middlewares ...middleware) *Mux {
 
 // Handle sets a route with a custom HTTP method.
 func (m *Mux) Handle(method string, path string) *route {
-	return &route{m: m, method: method, path: path}
+	return &route{m: m, method: method, path: m.prefix + path}
 }
 
 // GET sets a route with the GET HTTP method.
