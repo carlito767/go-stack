@@ -57,14 +57,14 @@ func NewRouter() *Mux {
 //
 // Example:
 //
-//	root := NewMux()
-//	apiV0 := root.NewSubRouter("/api/v0")
-//	apiV0.HandleFunc("/hello", HelloHandler)
-//	// registers "/api/v0/hello" on the shared ServeMux
+//	router := NewMux()
+//	apiRouter := router.NewSubRouter("/api/v0")
+//	apiRouter.HandleFunc("/hello", HelloHandler)
 func (m *Mux) NewSubRouter(prefix string) *Mux {
 	return &Mux{
-		mux:    m.mux,
-		prefix: m.prefix + prefix,
+		mux:         m.mux,
+		prefix:      m.prefix + prefix,
+		middlewares: m.middlewares,
 	}
 }
 
